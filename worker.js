@@ -1,6 +1,8 @@
 const { StaticPool } = require('node-worker-threads-pool')
+const Piscina = require('piscina')
+const path = require('path')
 const staticPool = new StaticPool({
-  size: parseInt(process.env.THREAD_POOL_COUNT) || 10,
+  size: parseInt(process.env.THREAD_POOL_COUNT) || 1,
   task: './spawn.js'
 })
 
@@ -36,6 +38,28 @@ const startWorker = async (req, res) => {
   }
 }
 
+
+const pool = new Piscina({
+  filename: path.join(__dirname, 'piscina-spawn.js'),
+  minThreads: 10,
+  maxThreads: 100,
+  concurrentTasksPerWorker: 20,
+})
+
+const startPiscinaWorker = async (req, res) => {
+  try {
+    console.info(`Initializing worker for workerId :: ${req.query.id} even:: ${req.query.even || false}`)
+    console.log("stats :: ", pool.completed, pool.runTime)
+    const result = await pool.run({ code: req.query.even ? evenCode : code, workerId: req.query.id }, { name: "runCode" })
+    console.log('Fetched the result :: ', result)
+    res.json({ done: true })
+  } catch (error) {
+    console.error(`Error in the worker :: ${req.query.id} :: `, error)
+    res.json({ error: true })
+  }
+}
+
 module.exports = {
-  startWorker
+  startWorker,
+  startPiscinaWorker
 }

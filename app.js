@@ -9,4 +9,8 @@ app.use('/health-check', (_req, res) => {
   res.json({ working: true })
 })
 
+app.use('/piscina', (req, res) => {
+  worker.startPiscinaWorker(req, res)
+})
+
 app.listen(5000, () => console.log('Started the server'))
